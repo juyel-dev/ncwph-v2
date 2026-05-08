@@ -1,115 +1,149 @@
 import React, { useState } from 'react';
-import { Upload, User, Shield, Camera } from 'lucide-react';
+import { Camera, UserPlus, ShieldCheck, Upload, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE = 'https://your-render-url.onrender.com'; // পরে পরিবর্তন করবে
+const API_URL = "https://ncwph-v2.onrender.com";
 
 function App() {
+  const [mode, setMode] = useState<'enroll' | 'verify'>('enroll');
   const [userId, setUserId] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
-  const [result, setResult] = useState<any>(null);
-  const [mode, setMode] = useState<'enroll' | 'verify'>('enroll');
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
       setPreview(URL.createObjectURL(file));
+      setResult(null);
     }
   };
 
   const handleSubmit = async () => {
-    if (!image || !userId) return;
+    if (!userId || !image) return;
     setLoading(true);
+    setResult(null);
 
     const formData = new FormData();
-    formData.append('file', image);
+    formData.append("file", image);
 
     try {
       const endpoint = mode === 'enroll' 
         ? `/enroll/${userId}` 
         : `/verify/${userId}`;
-      
-      const res = await axios.post(`\( {API_BASE} \){endpoint}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+
+      const res = await axios.post(`\( {API_URL} \){endpoint}`, formData);
       setResult(res.data);
-    } catch (err) {
-      alert('Error: ' + (err as any).message);
+    } catch (err: any) {
+      setResult({ 
+        status: "error", 
+        message: err.response?.data?.detail || "Something went wrong" 
+      });
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-950 flex items-center justify-center p-6 overflow-hidden relative">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(at_center,#ffffff15_0%,transparent_70%)]"></div>
-      
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-violet-950 flex items-center justify-center p-6">
       <div className="max-w-2xl w-full">
+        {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-6xl font-bold text-white mb-3 tracking-tighter">NCWPH</h1>
-          <p className="text-xl text-white/70">Neural Context Wavelet Phase Hashing v2.0</p>
+          <h1 className="text-6xl font-bold text-white tracking-tighter mb-2">NCWPH v2.0</h1>
+          <p className="text-xl text-white/70">Neural Context Wavelet Phase Hashing</p>
         </div>
 
         {/* Glass Card */}
-        <div className="backdrop-blur-3xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-10 text-white">
-          <div className="flex gap-4 mb-8 justify-center">
-            <button 
+        <div className="backdrop-blur-3xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl overflow-hidden">
+          {/* Tabs */}
+          <div className="flex border-b border-white/10">
+            <button
               onClick={() => setMode('enroll')}
-              className={`px-8 py-3 rounded-2xl transition-all ${mode === 'enroll' ? 'bg-white text-black shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
+              className={`flex-1 py-5 text-lg font-medium transition-all ${mode === 'enroll' ? 'text-white border-b-4 border-violet-400' : 'text-white/60'}`}
             >
-              Enroll
+              <UserPlus className="inline mr-2" /> Enroll
             </button>
-            <button 
+            <button
               onClick={() => setMode('verify')}
-              className={`px-8 py-3 rounded-2xl transition-all ${mode === 'verify' ? 'bg-white text-black shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
+              className={`flex-1 py-5 text-lg font-medium transition-all ${mode === 'verify' ? 'text-white border-b-4 border-violet-400' : 'text-white/60'}`}
             >
-              Verify
+              <ShieldCheck className="inline mr-2" /> Verify
             </button>
           </div>
 
-          <div className="space-y-8">
+          <div className="p-10 space-y-8">
             <input
               type="text"
-              placeholder="User ID / Email"
+              placeholder="Enter User ID or Email"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              className="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-lg focus:outline-none focus:border-white/60 transition"
+              className="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-white placeholder:text-white/50 focus:outline-none focus:border-violet-400 transition"
             />
 
-            <div className="border-2 border-dashed border-white/30 rounded-3xl p-12 text-center hover:border-white/60 transition cursor-pointer"
-                 onClick={() => document.getElementById('file')?.click()}>
+            {/* Image Upload */}
+            <div 
+              className="border-2 border-dashed border-white/30 rounded-3xl p-12 text-center hover:border-violet-400 transition cursor-pointer"
+              onClick={() => document.getElementById('file-input')?.click()}
+            >
               {preview ? (
-                <img src={preview} alt="preview" className="mx-auto max-h-64 rounded-2xl" />
+                <img src={preview} alt="preview" className="mx-auto max-h-72 rounded-2xl shadow-lg" />
               ) : (
                 <div>
-                  <Camera className="mx-auto w-16 h-16 mb-4 opacity-70" />
-                  <p className="text-xl">Upload Face Photo</p>
+                  <Camera className="mx-auto w-20 h-20 mb-4 text-white/60" />
+                  <p className="text-xl text-white/80">Upload Face Photo</p>
+                  <p className="text-sm text-white/50 mt-2">JPG, PNG supported</p>
                 </div>
               )}
-              <input id="file" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+              <input 
+                id="file-input" 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handleImage} 
+              />
             </div>
 
             <button
               onClick={handleSubmit}
-              disabled={loading || !image || !userId}
-              className="w-full py-5 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 font-semibold text-xl disabled:opacity-50 hover:scale-105 transition transform"
+              disabled={loading || !userId || !image}
+              className="w-full py-5 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-xl font-semibold flex items-center justify-center gap-3 hover:scale-105 transition disabled:opacity-50"
             >
-              {loading ? 'Processing...' : mode === 'enroll' ? 'Enroll User' : 'Verify Identity'}
+              {loading ? (
+                <><Loader2 className="animate-spin" /> Processing...</>
+              ) : mode === 'enroll' ? (
+                'Enroll User'
+              ) : (
+                'Verify Identity'
+              )}
             </button>
           </div>
 
+          {/* Result */}
           {result && (
-            <div className={`mt-8 p-6 rounded-2xl text-center text-2xl font-medium transition-all ${result.match ? 'bg-green-500/20 border border-green-400' : 'bg-red-500/20 border border-red-400'}`}>
-              {result.decision || (result.match ? '✅ Verified Successfully' : '❌ Not Matched')}
-              <p className="text-sm mt-2 opacity-75">Confidence: {(result.confidence * 100).toFixed(1)}%</p>
+            <div className={`mx-10 mb-10 p-8 rounded-2xl text-center text-xl font-medium transition-all ${
+              result.status === 'error' 
+                ? 'bg-red-500/20 border border-red-400' 
+                : result.match || result.decision === 'ENROLLED'
+                ? 'bg-green-500/20 border border-green-400'
+                : 'bg-yellow-500/20 border border-yellow-400'
+            }`}>
+              <p className="text-3xl mb-2">
+                {result.status === 'error' ? '❌' : result.match ? '✅' : '⚠️'}
+              </p>
+              <p>{result.message}</p>
+              {result.confidence && (
+                <p className="text-sm mt-3 opacity-75">
+                  Confidence: {(result.confidence * 100).toFixed(1)}%
+                </p>
+              )}
             </div>
           )}
         </div>
 
-        <p className="text-center text-white/40 mt-8 text-sm">Production Grade • Zero Backend on Client • Render.com Deployed</p>
+        <p className="text-center text-white/40 mt-8 text-sm">
+          Production • Render.com • Zero Backend on Client
+        </p>
       </div>
     </div>
   );
